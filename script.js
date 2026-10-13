@@ -13,9 +13,12 @@
 
     let board = Array(9).fill('');
     let currentPlayer = 'X';
+    let startingPlayer = 'X';
+    let isMatchOver = false;
     let isGameActive = true;
     let gameMode = 'pvp'; // 'pvp', 'ai-easy', 'ai-hard'
     let isAiThinking = false;
+    let aiTimeoutId = null;
     let soundEnabled = true;
 
     const scores = {
@@ -216,7 +219,7 @@
         const cell = e.currentTarget;
         const index = parseInt(cell.getAttribute('data-index'), 10);
 
-        if (board[index] !== '' || !isGameActive || isAiThinking) {
+        if (board[index] !== '' || !isGameActive || isAiThinking || (gameMode.startsWith('ai') && currentPlayer === 'O')) {
             return;
         }
 
@@ -249,6 +252,7 @@
 
     function handleGameOver(outcome) {
         isGameActive = false;
+        isMatchOver = true;
         cardX.classList.remove('active-card');
         cardO.classList.remove('active-card');
 
@@ -295,9 +299,14 @@
 
     // --- Inteligență Artificială (AI) ---
     function triggerAiMove() {
+        if (aiTimeoutId) {
+            clearTimeout(aiTimeoutId);
+            aiTimeoutId = null;
+        }
         isAiThinking = true;
         // Mic delay pentru o experiență de joc naturală
-        setTimeout(() => {
+        aiTimeoutId = setTimeout(() => {
+            aiTimeoutId = null;
             if (!isGameActive) {
                 isAiThinking = false;
                 return;
@@ -401,9 +410,20 @@
 
     // --- Resetare & Setări ---
     function restartRound() {
+        if (aiTimeoutId) {
+            clearTimeout(aiTimeoutId);
+            aiTimeoutId = null;
+        }
         stopConfetti();
         board = Array(9).fill('');
-        currentPlayer = 'X';
+
+        // Alternează jucătorul de start dacă meciul anterior s-a terminat
+        if (isMatchOver) {
+            startingPlayer = startingPlayer === 'X' ? 'O' : 'X';
+            isMatchOver = false;
+        }
+
+        currentPlayer = startingPlayer;
         isGameActive = true;
         isAiThinking = false;
 
@@ -420,15 +440,29 @@
         });
 
         updateTurnIndicator();
+
+        // Rândul AI dacă este activ modul AI și runda începe cu 0
+        if (currentPlayer === 'O' && gameMode.startsWith('ai') && isGameActive) {
+            triggerAiMove();
+        }
     }
 
     function resetAllScores() {
+        if (aiTimeoutId) {
+            clearTimeout(aiTimeoutId);
+            aiTimeoutId = null;
+        }
         scores.X = 0;
         scores.O = 0;
         scores.tie = 0;
         scoreXEl.textContent = '0';
         scoreOEl.textContent = '0';
         scoreTieEl.textContent = '0';
+
+        // Resetează logica de alternare: utilizatorul uman (X) este obligat să facă prima mutare
+        startingPlayer = 'X';
+        isMatchOver = false;
+
         restartRound();
     }
 
