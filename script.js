@@ -24,7 +24,7 @@
         tie: 0
     };
 
-    // --- Elemente DOM ---
+    const boardElement = document.getElementById('board');
     const cells = document.querySelectorAll('.cell');
     const statusMessage = document.getElementById('status-message');
     const scoreXEl = document.getElementById('score-x');
@@ -253,6 +253,9 @@
         cardO.classList.remove('active-card');
 
         if (outcome.winner === 'tie') {
+            if (boardElement) {
+                boardElement.classList.remove('has-winner');
+            }
             scores.tie++;
             scoreTieEl.textContent = scores.tie;
             statusMessage.innerHTML = `🤝 <strong>Egalitate!</strong> Meci nul.`;
@@ -268,9 +271,14 @@
                 cardO.classList.add('active-card');
             }
 
-            // Evidențiază căsuțele câștigătoare
-            outcome.combination.forEach(idx => {
-                cells[idx].classList.add('winning');
+            // Evidențiază căsuțele câștigătoare cu animație eșalonată
+            if (boardElement) {
+                boardElement.classList.add('has-winner');
+            }
+            outcome.combination.forEach((idx, step) => {
+                const cell = cells[idx];
+                cell.classList.add('winning');
+                cell.style.setProperty('--win-delay', `${step * 140}ms`);
             });
 
             if (winner === 'X') {
@@ -399,9 +407,14 @@
         isGameActive = true;
         isAiThinking = false;
 
+        if (boardElement) {
+            boardElement.classList.remove('has-winner');
+        }
+
         cells.forEach(cell => {
             cell.textContent = '';
             cell.className = 'cell';
+            cell.style.removeProperty('--win-delay');
             const idx = cell.getAttribute('data-index');
             cell.setAttribute('aria-label', `Căsuța ${parseInt(idx, 10) + 1}`);
         });

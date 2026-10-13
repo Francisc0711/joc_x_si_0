@@ -335,21 +335,165 @@ body {
     animation: popIn 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
-/* Căsuțe Câștigătoare */
-.cell.winning {
-    background: rgba(16, 185, 129, 0.25) !important;
-    border-color: var(--color-win) !important;
-    animation: winPulse 1s infinite alternate ease-in-out;
+/* Stare tablă la final de joc cu câștigător */
+.board.has-winner .cell:not(.winning) {
+    opacity: 0.32;
+    transform: scale(0.94);
+    filter: grayscale(40%) blur(0.2px);
+    pointer-events: none;
+    transition: opacity 0.4s ease, transform 0.4s ease, filter 0.4s ease;
 }
 
-@keyframes winPulse {
+/* Căsuțe Câștigătoare - Animație & Evidențiere */
+.cell.winning {
+    z-index: 5;
+    cursor: default;
+    border-width: 2px !important;
+    position: relative;
+    overflow: hidden;
+    animation: winCellPop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) var(--win-delay, 0ms) both,
+               winCellWave 1.8s ease-in-out calc(var(--win-delay, 0ms) + 500ms) infinite alternate;
+}
+
+/* Evidențiere câștigător pentru Jucătorul X */
+.cell.winning.x {
+    background: rgba(0, 240, 255, 0.2) !important;
+    border-color: var(--color-x) !important;
+    box-shadow: 
+        0 0 15px var(--color-x-glow),
+        0 0 35px rgba(0, 240, 255, 0.35),
+        inset 0 0 15px rgba(0, 240, 255, 0.25) !important;
+    text-shadow: 
+        0 0 15px var(--color-x),
+        0 0 30px var(--color-x-glow),
+        0 0 45px rgba(0, 240, 255, 0.6) !important;
+}
+
+/* Evidențiere câștigător pentru Jucătorul 0 */
+.cell.winning.o {
+    background: rgba(255, 51, 102, 0.2) !important;
+    border-color: var(--color-o) !important;
+    box-shadow: 
+        0 0 15px var(--color-o-glow),
+        0 0 35px rgba(255, 51, 102, 0.35),
+        inset 0 0 15px rgba(255, 51, 102, 0.25) !important;
+    text-shadow: 
+        0 0 15px var(--color-o),
+        0 0 30px var(--color-o-glow),
+        0 0 45px rgba(255, 51, 102, 0.6) !important;
+}
+
+/* Căsuță câștigătoare generică / fallback */
+.cell.winning:not(.x):not(.o) {
+    background: rgba(16, 185, 129, 0.25) !important;
+    border-color: var(--color-win) !important;
+    box-shadow: 
+        0 0 15px var(--color-win-glow),
+        0 0 35px rgba(16, 185, 129, 0.35),
+        inset 0 0 15px rgba(16, 185, 129, 0.25) !important;
+}
+
+/* Efect de strălucire radială internă */
+.cell.winning::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: radial-gradient(circle at center, rgba(255, 255, 255, 0.22) 0%, transparent 72%);
+    pointer-events: none;
+    animation: winGlowPulse 1.8s ease-in-out infinite alternate;
+    animation-delay: var(--win-delay, 0ms);
+}
+
+/* Efect dinamic de trecere a luminii (Sheen sweep) */
+.cell.winning::after {
+    content: '';
+    position: absolute;
+    top: -60%;
+    left: -160%;
+    width: 220%;
+    height: 220%;
+    background: linear-gradient(
+        115deg,
+        transparent 30%,
+        rgba(255, 255, 255, 0.3) 48%,
+        rgba(255, 255, 255, 0.65) 50%,
+        rgba(255, 255, 255, 0.3) 52%,
+        transparent 70%
+    );
+    transform: rotate(25deg);
+    pointer-events: none;
+    animation: winSheen 2.4s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+    animation-delay: calc(var(--win-delay, 0ms) + 250ms);
+}
+
+/* Animație de intrare cu săritură (Pop & Bounce) */
+@keyframes winCellPop {
     0% {
-        transform: scale(1);
-        box-shadow: 0 0 10px var(--color-win-glow);
+        transform: scale(0.9);
+        opacity: 0.85;
+    }
+    60% {
+        transform: scale(1.16);
     }
     100% {
+        transform: scale(1.06);
+        opacity: 1;
+    }
+}
+
+/* Animație continuă de plutire și oscilație lină */
+@keyframes winCellWave {
+    0% {
+        transform: scale(1.04) translateY(0);
+    }
+    50% {
+        transform: scale(1.09) translateY(-3px);
+    }
+    100% {
+        transform: scale(1.04) translateY(0);
+    }
+}
+
+/* Animație pentru reflexia de lumină diagonală */
+@keyframes winSheen {
+    0% {
+        left: -160%;
+        opacity: 0;
+    }
+    15% {
+        opacity: 1;
+    }
+    60%, 100% {
+        left: 160%;
+        opacity: 0;
+    }
+}
+
+/* Animație puls strălucire internă */
+@keyframes winGlowPulse {
+    0% {
+        opacity: 0.25;
+        transform: scale(0.92);
+    }
+    100% {
+        opacity: 0.8;
+        transform: scale(1.06);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .cell.winning {
+        animation: none;
         transform: scale(1.04);
-        box-shadow: 0 0 25px var(--color-win-glow);
+    }
+    .cell.winning::after,
+    .cell.winning::before {
+        display: none;
+    }
+    .board.has-winner .cell:not(.winning) {
+        transform: none;
+        transition: opacity 0.2s ease;
     }
 }
 
